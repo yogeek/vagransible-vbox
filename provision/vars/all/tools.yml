@@ -8,7 +8,7 @@ install:
   vscode: true
   vscodeextensions: true
   atom: false
-  sublimetext: true
+  sublimetext: false
   spyder: false
   intellij: false
   pycharm: false
@@ -44,19 +44,19 @@ install:
 
 # Tools versions (only previously enabled tools will be taken into account)
 version:
-  golang: "1.11.4"
-  protobuf: "3.6.1"
-  kubectl: "1.13.0"
-  minikube: "0.33.1"
-  istioctl: "1.0.5"
-  stern: "1.10.0"
-  docker_compose: "1.23.2"
-  intellij_version: "2018.3.1"
-  pycharm_version: "2018.3.2"
-  terraform: "0.11.11"
-  packer: "1.3.3"
-  nvm: "0.33.2"
-  nodejs: "8.4.0"
+  golang: "1.14.1"
+  protobuf: "3.11.4"
+  kubectl: "latest"
+  minikube: "1.9.2"
+  istioctl: "1.5.1"
+  stern: "1.11.0"
+  docker_compose: "1.25.4"
+  intellij_version: "2019.3.4"
+  pycharm_version: "2019.3.4"
+  terraform: "0.12.23"
+  packer: "1.5.5"
+  nvm: "0.35.3"
+  nodejs: "12.16.1"
   # For SDKs install, we use 'SDKMAN' tool (https://sdkman.io/)
   # Leave the sdk versions below commented to get the latest version of each tool
   # (if you want a specific version, check that it is avaiable in SDKMAN first)

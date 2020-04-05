@@ -181,6 +181,7 @@
             - candidate: maven
               version: "{{ version.maven | default('') }}"
       when: install.java
+      ignore_errors: True
 
     - role: gantsign.sdkman_init
       users:
@@ -191,6 +192,7 @@
             - candidate: sbt
               version: "{{ version.sbt | default('') }}"
       when: install.scala
+      ignore_errors: True
 
     ###########################################
     # NodeJs

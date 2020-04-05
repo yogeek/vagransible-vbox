@@ -1,0 +1,13 @@
+  
+---
+# tasks file for codecap.kubectl
+- name: "Get latest kubectl version"
+  command: "curl -s {{kubectl_latest_url}}"
+  args:
+    warn: false
+  register: kubectl_latest_version
+  failed_when:  false
+  changed_when: false
+- name: "kubectl latest version"
+  debug:
+    msg: "{{kubectl_latest_version.stdout}}"

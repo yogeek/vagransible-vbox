@@ -1,31 +1,21 @@
 ---
-- name: Download kubernetes-client archive
+- include: get_latest_version.yml
+
+- name: 'Ensure bin directory exists'
+  file:
+    path: "{{kubectl_bin_directory}}"
+    state: directory
+
+- name: download file
   get_url:
-    url: "https://dl.k8s.io/v{{kubectl_version}}/kubernetes-client-{{kubectl_os}}-{{kubectl_arch}}.tar.gz"
-    # checksum: "{{kubectl_checksum}}"
-    dest: "{{kubectl_tmp_directory}}"
-  tags:
-    - kubectl
+    url:   "{{kubectl_release_url}}/{{(kubectl_version == 'latest')|ternary(kubectl_latest_version.stdout,kubectl_version)}}/bin/linux/amd64/kubectl"
+    dest:  "{{kubectl_bin_directory}}/kubectl"
 
-- name: Unarchive kubernetes-client
-  unarchive:
-    src: "{{kubectl_tmp_directory}}/kubernetes-client-{{kubectl_os}}-{{kubectl_arch}}.tar.gz"
-    dest: "{{kubectl_tmp_directory}}"
-  tags:
-    - kubectl
 
-- name: Copy kubectl binary to destination directory
-  copy:
-    src: "{{kubectl_tmp_directory}}/kubernetes/client/bin/{{item}}"
-    dest: "{{kubectl_bin_directory}}/{{item}}"
-    mode: 0755
-    owner: root
-    group: root
-    remote_src: yes
-  with_items:
-    - kubectl
-  tags:
-    - kubectl
+- name: 'Set permissions for kubectl'
+  file:
+    path: "{{kubectl_bin_directory}}/kubectl"
+    mode: '0755'
 
 # kubectx and kubens
 
