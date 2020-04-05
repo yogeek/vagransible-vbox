@@ -1,0 +1,22 @@
+!!! You must sign your GIT commit !!!
+
+* To get a GPG key, you have several solutions :
+  - use the GPG key that has been created for you with this VM
+  - import an existing one with 'gpg --import /path/to/your/private/gpg/key.file'
+  - create one : https://help.github.com/en/github/authenticating-to-github/generating-a-new-gpg-key
+
+* Get your Key ID with 'gpg --list-keys --keyid-format LONG'
+
+* Configure GIT :
+  - git config [--global] user.signingkey YOURKEYID
+  - git config [--global] commit.gpgsign true
+
+
+---------------------- Notes ---------------------- 
+
+Export Public key : 
+    gpg --export --armor (KEYID)
+Export Private key (if you want to use it on other devices/systems): 
+    gpg --export-secret-keys --armor > foo.key
+
+You can also import your public key to your SCM server user profile for the automatic signing checks on server side.

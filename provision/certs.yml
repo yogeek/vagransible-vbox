@@ -1,0 +1,42 @@
+---
+# Check connection to download corporate certificates
+# (possible to not have connection if remote work and no proxy configured yet)
+- name: Check that connection to corporate repository is ok
+  uri:
+    url: "{{ corporate_repository_url }}"
+    status_code: 200, 302
+  failed_when: false
+  register: ping_repo
+
+- name: debug
+  debug:
+    var: ping_repo
+
+- name: Fail if no access to repository
+  fail:
+    msg: "Connection to  {{ corporate_repository_url }} failed. Check your internet connection or your proxy settings if working remotely."
+  when: ping_repo.failed
+
+# Install Corporate certificates
+- name:  Ensure local certs directory exists
+  file:
+    path: /usr/local/share/ca-certificates
+    state: directory
+
+- name: Install Corporate certificates
+  get_url:
+    url: "{{ corporate_crt_url }}"
+    dest: "/usr/local/share/ca-certificates/corp.crt"
+    force : no
+  register: result_it
+
+- name: Install Corporate Root certificate
+  get_url:
+    url: "{{ corporate_root_crt_url }}"
+    dest: "/usr/local/share/ca-certificates/corp-root.crt"
+    force : no
+  register: result_root
+
+- name: Update certs index
+  shell: /usr/sbin/update-ca-certificates
+  when: (result_it | changed) or (result_root | changed)

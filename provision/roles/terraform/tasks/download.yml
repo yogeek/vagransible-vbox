@@ -1,0 +1,6 @@
+---
+
+- name: Download terraform archive Linux 64 bits
+  get_url:
+    url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip
+    dest: "{{ binary_tmp_directory }}/terraform-{{terraform_version}}.zip"

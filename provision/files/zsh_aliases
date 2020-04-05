@@ -1,0 +1,170 @@
+# Personnal aliases
+
+####################
+# Proxy
+####################
+
+DEFAULT="\e[39m"
+GREEN="\e[32m"
+RED="\e[31m"
+
+# Check internet access, fail after 15s
+function check_internet_connection() {
+	[[ "$(curl -m 5 -L -s -o /dev/null -I -w '%{http_code}' http://www.google.fr)" == "200" ]] && { echo -e "${GREEN}OK"; return 0 } || { echo -e "${RED}KO"; return 1 }
+}
+# Check DNS
+function check_dns() {
+	dig +short www.google.fr +time=5 +tries=3 > /dev/null && { echo -e "${GREEN}OK"; return 0 } || { echo -e "${RED}KO"; return 1 }
+}
+
+# Network healthcheck
+function proxy_status() {
+	echo -en "${DEFAULT}CNTLM : ${GREEN}"; sudo systemctl is-active cntlm.service
+	echo -en "${DEFAULT}REDSOCKS : ${GREEN}"; sudo systemctl is-active redsocks.service
+	echo -en "${DEFAULT}INTERNET CONNECTION : "; check_internet_connection
+	echo -en "${DEFAULT}DNS_CONNECTION : "; check_dns
+}
+
+# Proxy management
+alias proxy_unset='unset http{s,}_proxy && unset HTTP{S,}_PROXY && unset FTP_PROXY && unset ftp_proxy && unset ALL_PROXY && unset all_proxy'
+alias proxy_start='sudo systemctl daemon-reload && sudo systemctl start cntlm.service && sudo systemctl start redsocks.service; proxy_status'
+alias proxy_stop='sudo systemctl stop redsocks.service cntlm.service; proxy_status'
+
+function proxy_restart() {
+	sudo systemctl daemon-reload
+	sudo systemctl restart cntlm 
+	sudo systemctl restart redsocks 
+	sudo systemctl restart systemd-resolved
+	proxy_status
+}
+
+function dns_restart() {
+	sudo systemctl daemon-reload
+	sudo systemctl restart systemd-resolved
+	proxy_status
+}
+
+alias prs='proxy_status'
+alias rep='proxy_status'
+alias red='dns_restart'
+
+####################
+# Docker
+####################
+function docker_prune() {
+    docker container prune
+    docker image prune
+}
+function docker_run() {
+    docker run --rm -it --network=host -v $(pwd):/current --entrypoint "" -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION "$@"
+}
+function docker_bash() {
+    docker_run "$1" bash
+}
+function docker_sh() {
+    docker_run "$1" sh
+}
+function docker_enter() {
+    docker_bash $1 || docker_sh $1
+}
+
+
+alias dop='docker_prune'
+alias dob='docker_bash'
+alias dos='docker_sh'
+alias doi='docker images'
+alias doe='docker_enter'
+
+
+# Portainer
+alias portainer='docker run -d -p 9001:9000 --name portainer -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer'
+alias portainer_stop='docker rm -f portainer'
+
+####################
+# K8S
+####################
+
+# Update kubectl
+function kubectl-up() {
+	echo "Updating kubectl to $(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt) version..."
+	sudo curl -sSL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl > /usr/bin/kubectl
+	sudo chmod +x /usr/bin/kubectl
+	echo "Done !"
+	kubectl version -o json
+}
+
+funcion kubeops() {
+	echo "Searching kube config..."
+	if [ -z "$1" ]; then
+		if [[ -e $KUBECONFIG ]]; then 
+			echo "No argument => loading current KUBECONFIG ($KUBECONFIG) !"
+			CONFIGFILE=$(basename $KUBECONFIG)
+		else
+			echo "No KUBECONFIG : Either set KUBECONFIG env var or pass a kubeconfig name as argument"
+			echo ""
+			echo "Usage: ${0} <kube-config-name> "
+			echo ""
+			echo "------------------------------------"
+			echo "List of available kube config :"
+			echo "------------------------------------"
+			for i in $(find ~/.kube/ -maxdepth 1 -name "*config*"); do echo $(basename $i); done
+			return
+		fi
+	else
+		CONFIGFILE=${1}
+	fi
+	echo "Using kube config : ${CONFIGFILE}..."
+	docker run -it --net=host -v ${HOME}:${HOME} hjacobs/kube-ops-view --kubeconfig-path=${HOME}/.kube/${CONFIGFILE}
+}
+
+function k() {
+  kubectl "$@"
+}
+
+# kubefwd
+function kf() {
+  # Get current context
+  ctx="$(kubectl config view -o=jsonpath='{.current-context}')"
+  # Get namespace
+  ns="$(kubectl config view -o=jsonpath="{.contexts[?(@.name==\"${ctx}\")].context.namespace}")"
+  echo "#################################################################"
+  echo "Forwarding services from $ns namespace in $ctx context..."
+  echo "#################################################################"
+  # Forward services of the current namespace
+  sudo kubefwd services -c $KUBECONFIG -n $ns
+}
+
+
+#################################
+# AWS 
+#################################
+
+# Sync the VM clock 
+# When putting the laptop in standby mode, the clock in the VM could be desynchronize with the real clock
+# which can cause aws-cli to fail (based on ssh => the clocks have to be synched)
+alias cls='clock_sync'
+function clock_sync() {
+	sudo /usr/sbin/VBoxService --timesync-set-start --timesync-set-on-restore --timesync-set-threshold 1000 --timesync-interval 5000
+}
+
+# AWS ADFS login
+export PATH=$PATH:~/.local/bin
+
+# Reload and Edit ZSH config
+alias ra='. ~/.zshrc'
+alias ea='code ~/.zsh_aliases'
+
+#################################
+# Tools
+#################################
+
+# Use of (N) zsh option to avoid "no matches found" message
+pycharm_bin=$(find /opt/pycharm-community-*(N) -name pycharm.sh)
+if [ "$pycharm_bin" != "" ]; then
+  alias pycharm='$pycharm_bin'
+fi
+
+# NCDU : disk usage analyzer in a Terminal UI. Great for finding were your precious space is being utilized !
+# The -x option skips crossing filesystem boundaries.
+# The -r option is for readonly mode (!!! WARNING !!! wihtout it, you can delete an item by pressing 'd')
+command -v ncdu > /dev/null && alias space-used='ncdu -x -r'

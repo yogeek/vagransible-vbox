@@ -1,0 +1,6 @@
+---
+ohmyzsh:
+  theme: robbyrussell
+  plugins:
+    - git
+    - docker

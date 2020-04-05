@@ -1,0 +1,18 @@
+---
+# "kubectl" version to install
+kubectl_version: "1.13.0"
+# SHA512 checksum of the archive (see https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.12.md
+# for the checksums)
+kubectl_checksum: "sha512:61a6cd3b1fb34507e0b762a45da09d88e34921985970a2ba594e0e5af737d94c966434b4e9f8e84fb73a0aeb5fa3e557344cd2eb902bf73c67d4b4bff33c6831"
+# Where to install "kubectl" binary
+kubectl_bin_directory: "/usr/local/bin"
+# Directory to store the kubeclient archive
+kubectl_tmp_directory: "{{lookup('env', 'TMPDIR') | default('/tmp',true)}}"
+# Owner of "kubectl" binary
+kubectl_owner: "root"
+# Group of "kubectl" binary
+kubectl_group: "root"
+# Operarting system on which "kubectl" should run on
+kubectl_os: "linux" # use "darwin" for MacOS X, "windows" for Windows
+# Processor architecture "kubectl" should run on
+kubectl_arch: "amd64" # other possible values: "386","arm64","arm","ppc64le","s390x"

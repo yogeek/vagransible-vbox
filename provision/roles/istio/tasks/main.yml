@@ -1,0 +1,34 @@
+---
+
+- name: Create Istio Directory
+  become: true
+  file:
+    path: /opt/kubernetes/istio-{{ istio_version }}
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Download Istio
+  become: true
+  get_url:
+    url: "{{ istio_download_url }}"
+    dest: /opt/kubernetes/istio-{{ istio_version }}/istio-{{ istio_version }}.tar.gz
+
+- name: Install Istio
+  become: true
+  unarchive:
+    src: /opt/kubernetes/istio-{{ istio_version }}/istio-{{ istio_version }}.tar.gz
+    dest: /opt/kubernetes/istio-{{ istio_version }}/
+    extra_opts:
+      - --strip-components=1
+
+- name: Creating symlink to Istioctl
+  become: true
+  file:
+    src: /opt/kubernetes/istio-{{ istio_version }}/bin/istioctl
+    dest: /usr/local/bin/istioctl
+    owner: root
+    group: root
+    mode: 0755
+    state: link

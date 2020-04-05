@@ -1,0 +1,46 @@
+---
+# Check connection to internet
+# (possible to not have connection if remote work, VPN enables but no proxy configured yet)
+- name: Check connection to internet
+  uri:
+    url: "http://www.google.fr"
+    status_code: 200, 302
+  no_log: True
+  failed_when: false
+  register: ping_internet
+
+- debug:
+   msg: ping_internet
+
+- name: Set fact with internet connection status
+  set_fact:
+    internet_connection: "{{ ('no'|bool) if ping_internet.status not in [200,302] else ('yes'|bool) }}"
+
+- name: stop eventual proxy
+  systemd:
+    state: stopped
+    name: "{{ item }}"
+  with_items:
+    - redsocks
+    - cntlm
+  when: not internet_connection and install.proxy
+  no_log: True
+  failed_when: false
+
+- name: Check connection to internet again
+  uri:
+    url: "http://www.google.fr"
+    status_code: 200, 302
+  no_log: True
+  failed_when: false
+  register: ping_internet_2
+  when: not internet_connection
+
+- name: Internet network http return code 
+  debug:
+    var: ping_internet_2
+
+- name: Set fact with internet connection status
+  set_fact:
+    internet_connection: "{{ ('no'|bool) if ping_internet_2.status not in [200,302] else ('yes'|bool) }}"
+  when: not internet_connection

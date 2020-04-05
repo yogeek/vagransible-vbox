@@ -1,0 +1,19 @@
+# User secret configuration
+user:
+    password: "password"
+
+# CNTLM proxy configuration
+cntlm:
+    username: "<YOUR_UID>"
+    passntlmv2: "<HASH_NTLM_PASSWORD>"
+    proxy: "<PROXY_URL>:<PROXY_PORT>"
+
+# VirtualBox machine configuration
+vm:
+    name: "vm.dev"
+    disksize: "50GB"
+    memory: 4096
+    cpus: 1
+    # The Windows folder that will be shared with the VM (Do not forget the "\\" as a separator in the path !)
+    sharedfolder: "D:\\mysharedfolder"
+    # For now, the location of the VM folder is the one configured in VirtualBox global Preferences.

@@ -1,0 +1,5 @@
+---
+# defaults file for terraform-role
+terraform_version: 0.11.11
+terraform_dir: /opt/terraform
+binary_tmp_directory: /tmp

@@ -1,0 +1,6 @@
+---
+nvm_git_force: "no"
+nvm_user: "{{ username }}"
+nvm_version: "v0.34.0"
+nvm_node_versions:
+  - "8.4.0"

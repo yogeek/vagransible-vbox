@@ -1,0 +1,4 @@
+.vagrant
+.vagrantuser
+*.log
+provision/vars/all/custom.yml

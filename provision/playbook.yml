@@ -1,0 +1,569 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  vars_files:
+    - "./vars/all/main.yml"
+    - "./vars/all/tools.yml"
+
+#------------------------ Pre Tasks ------------------------
+  pre_tasks:
+
+    - name: Load custom vars if any
+      include_vars:
+        file: "{{ item }}"
+      with_fileglob: 
+        - "./vars/all/custom.yml"
+      
+    - name: Ensure binary dir exists
+      file:
+        path: "{{ binary_tmp_directory }}"
+        state: directory
+        mode: 0755
+
+    - fail: msg="Variable '{{ item }}' is not defined"
+      when: item is not defined and install.proxy
+      with_items:
+        - cntlm.username
+        - cntlm.passntlmv2
+
+    - include: check_network.yml
+
+    - name: internet ?
+      debug:
+        var: internet_connection
+
+    - name: corporate ?
+      debug:
+        var: corporate_connection
+
+    - name: fail
+      fail:
+        msg: "No internet connection from VM : maybe you are working remotely...disable VPN before retrying"
+      when: not internet_connection
+
+    - name: Install system prerequisites
+      apt:
+        name: "{{ prerequisites_apt_packages }}"
+        state: present
+        update_cache: yes
+
+    # Debug purpose only
+    # - meta: end_play
+
+
+#------------------------ Roles ------------------------
+  roles:
+
+    ###########################################
+    # User config
+    ###########################################
+    - role: user
+      tags: [ 'role::user' ]
+
+    ###########################################
+    # General OS config
+    ###########################################
+    - role: gantsign.xdesktop
+      xdesktop_desktop: gnome
+      users: ["{{ username }}"]
+
+    - role: gantsign.keyboard
+      keyboard_model: "{{ user_keyboard_model }}"
+      keyboard_layout: "{{ user_keyboard_layout }}"
+
+    - role: gantsign.timezone
+      timezone: 'Europe/London'
+
+    ###########################################
+    # OH-MY-ZSH
+    ###########################################
+    - role: zsh
+      tags: [ 'role::oh-my-zsh' ]
+      when: install.ohmyzsh or default_shell == "zsh"
+
+    ###########################################
+    # Pip
+    ###########################################
+    - role: geerlingguy.pip
+      tags: [ 'role::pip']
+
+    ###########################################
+    # Pipenv
+    ###########################################
+    - role: gantsign.pipenv
+      pipenv_users:
+        - "{{ username }}"
+      tags: [ 'role::pipenv' ]
+      when: install.pipenv
+
+    - role: gantsign.pyenv
+      pyenv_users:
+        - "{{ username }}"
+      tags: [ 'role::pyenv' ]
+      when: install.pyenv
+
+    ###########################################
+    # Docker
+    ###########################################
+    - role: geerlingguy.docker
+      docker_install_compose: true
+      docker_compose_version: "{{ version.docker_compose }}"
+      docker_users:
+        - "{{ username }}"
+      tags: [ 'role::docker' ]
+
+    ###########################################
+    # Git user config
+    ###########################################
+    - role: gantsign.git_user
+      users:
+        - username: "{{ username }}"
+          git_user_name: "{{ user_fullname }}"
+          git_user_email: "{{ user_email }}"
+          git_user_force: no
+      tags: [ 'role::git_user' ]
+
+    ###########################################
+    # VSCode
+    ###########################################
+    - role: brentwg.visual-studio-code
+      users:
+        - username: "{{ username }}"
+      tags: [ 'role::visual-studio-code' ]
+      when: install.vscode
+ 
+    ###########################################
+    # VSCode extensions
+    ###########################################
+    # - role: gantsign.visual-studio-code-extensions
+    #   users:
+    #     - username: "{{ username }}"
+    #       visual_studio_code_extensions: "{{ visual_studio_code_extensions | default([]) }}"
+    #   tags: [ 'role::visual-studio-code-extensions' ]
+    #   when: install.vscodeextensions        
+      
+    ###########################################
+    # Atom
+    # (atom_packages defined role var in tools.yml)
+    ###########################################
+    - role: gantsign.atom
+      users:
+        - username: "{{ username }}"
+          atom_packages:  "{{ atom_packages | default([]) }}"
+      tags: [ 'role::atom' ]
+      when: install.atom
+
+    ###########################################
+    # Sublime Text
+    # (atom_packages defined role var in tools.yml)
+    ###########################################
+    - role: chaosmail.sublime-text
+      tags: [ 'role::sublime-text' ]
+      when: install.sublimetext
+
+    ###########################################
+    # Java : use SDKMAN for all SDKs install !
+    # Issue : https://github.com/gantsign/ansible-role-java/issues/174
+    ###########################################
+
+    - role: gantsign.sdkman
+      sdkman_users:
+        - "{{ username }}"
+      when: install.java or install.scala
+
+    - role: gantsign.sdkman_init
+      users:
+        - username: "{{ username }}"
+          sdkman_install:
+            - candidate: java
+              version: "{{ version.java | default('') }}"
+            - candidate: maven
+              version: "{{ version.maven | default('') }}"
+      when: install.java
+
+    - role: gantsign.sdkman_init
+      users:
+        - username: "{{ username }}"
+          sdkman_install:
+            - candidate: scala
+              version: "{{ version.scala | default('') }}"
+            - candidate: sbt
+              version: "{{ version.sbt | default('') }}"
+      when: install.scala
+
+    ###########################################
+    # NodeJs
+    ###########################################
+    - role: nodejs
+      nodejs_version: "{{ version.nodejs }}"
+      nvm_user: "{{ username }}"
+      nvm_version: "v{{ version.nvm }}"
+      nvm_node_versions: "{{ version.nodejs }}"
+      tags: [ 'role::nodejs' ]
+      when: install.nodejs
+
+    ###########################################
+    # Intellij
+    ###########################################
+    - role: gantsign.intellij
+      tags: [ 'role::intellij' ]
+      when: install.intellij
+
+    ###########################################
+    # PyCharm
+    ###########################################
+    - role: oefenweb.pycharm
+      tags: [ 'role::pycharm' ]
+      when: install.pycharm
+
+    ###########################################
+    # Golang
+    # (role vars defined in tools.yml)
+    ###########################################
+    - role: gantsign.golang
+      tags: [ 'role::golang' ]
+      when: install.golang
+
+    - role: protobuf
+      tags: [ 'role::protobuf' ]
+      when: install.protobuf
+
+    ###########################################
+    # Kubernetes tools
+    ###########################################
+
+    - role: gantsign.minikube
+      minikube_version: "{{ version.minikube }}"
+      tags: [ 'role::minikube' ]
+      when: install.minikube
+
+    - role: kubectl
+      kubectl_version: "{{ version.kubectl }}"
+      tags: [ 'role::kubectl' ]
+      when: install.kubectl
+
+    - role: gantsign.helm
+      tags: [ 'role::helm' ]
+      when: install.helm
+
+    ##########################################
+    # Chrome
+    ##########################################
+    - role: mlangry.google-chrome
+      # cf. https://www.chromium.org/administrators/configuring-other-preferences
+      google_chrome_global_preferences:
+        homepage: http://www.google.com
+        homepage_is_newtabpage: true
+        browser:
+          show_home_button: true
+        session:
+          restore_on_startup: 4,
+          startup_urls:
+            - http://www.google.com/
+        bookmark_bar:
+          show_on_all_tabs: true
+        distribution:
+          import_bookmarks_from_file: "/opt/google/chrome/bookmarks.html"
+          import_bookmarks: true
+          make_chrome_default: true
+          make_chrome_default_for_user: true
+      google_chrome_global_bookmarks_file_source: "{{ playbook_dir }}/files/bookmarks.html"
+      tags: [ 'role::chrome' ]
+      when: install.chrome
+
+    ###########################################
+    # Slack
+    ###########################################
+    # - role: claude_leveille.slack
+    - role: oefenweb.slack
+      tags: [ 'role::slack' ]
+      when: install.slack
+
+    ###########################################
+    # Terminator
+    ###########################################
+    - role: gantsign.terminator
+      tags: [ 'role::terminator' ]
+      when: install.terminator
+
+    ###########################################
+    # Postman
+    ###########################################
+    - role: gantsign.postman
+      tags: [ 'role::postman' ]
+      when: install.postman
+
+    ###########################################
+    # GPG key creation
+    ###########################################
+    - role: gpg_key
+      tags: [ 'role::gpg' ]
+      when: gpg_create
+
+    ###########################################
+    # Terraform & Packer
+    ###########################################
+    - role: terraform
+      terraform_version: "{{ version.terraform }}"
+      tags: [ 'role::terraform' ]  
+      when: install.terraform
+
+    - role: geerlingguy.packer
+      packer_version: "{{ version.packer }}"
+      tags: [ 'role::packer' ]  
+      when: install.packer
+
+    ###########################################
+    # Istio
+    ###########################################
+    - role: istio
+      istio_version: "{{ version.istioctl }}"
+      tags: [ 'role::istioctl' ]  
+      when: install.istioctl
+
+    ###########################################
+    # Proxy for remote config
+    ###########################################
+    - role: cntlm
+      tags: [ 'role::cntlm' ]
+      when: install.proxy
+
+    - role: redsocks
+      tags: [ 'role::redsocks' ]
+      when: install.proxy
+
+#------------------------ Post Tasks ------------------------
+  post_tasks:
+
+    # Set default shell
+    - name: set default shell for user
+      become: yes
+      user:
+        name: "{{ username }}"
+        shell: "/bin/{{ default_shell | default('zsh') }}"
+
+    - name: Confirm default shell
+      debug:
+        msg: "Default shell has been set to {{ default_shell }}"
+
+    # Check network
+    - include: check_network.yml
+
+    # Import Corpotate Certificates
+    # - include: certs.yml
+    #  tags: [ 'task::certs' ]
+    #  when: corporate_connection and install.certs
+
+    # Stopping proxy if we detected a problem with internet_connection
+    - name: Stop proxy services (if needed)
+      systemd:
+        state: stopped
+        name: "{{ item }}"
+      with_items:
+        - redsocks
+        - cntlm
+      when: not internet_connection and install.proxy
+
+    # AutoLogin
+    - name: Enable AutoLogin
+      blockinfile:
+        path: /etc/gdm3/custom.conf
+        marker: "\n# {mark} ANSIBLE MANAGED BLOCK\n"
+        block: |
+
+            AutomaticLoginEnable = true
+            AutomaticLogin = {{ username }}
+
+        insertafter: "\\[daemon\\]"
+        backup: yes
+      when: autologin
+
+    ###################### GVM ######################
+    - name: Install gvm
+      become: yes
+      become_user: "{{ username }}"
+      shell: "curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer | {{ default_shell }}"
+      register: gvm_output
+      failed_when: " gvm_output.rc != 0 and 'Already installed' not in gvm_output.stdout "
+      changed_when: " 'Already installed' not in gvm_output.stdout "
+      when: install.golang and golang_install_gvm
+      tags: [ 'task::gvm', 'tasks::golang' ]
+
+    - name: Install bison dependency for gvm
+      apt:
+        name: "{{ golang_packages }}"
+        state: present
+      when: install.golang and golang_install_gvm
+      tags: [ 'task::gvm', 'tasks::golang' ]
+
+    ###################### Rust ######################
+    - name: Install Rust
+      become: yes
+      become_user: "{{ username }}"
+      shell: "curl https://sh.rustup.rs -sSf | {{ default_shell }} -s -- -y"
+      register: rustup_output
+      failed_when: " rustup_output.rc != 0 and 'Rust is installed now. Great!' not in rustup_output.stdout "
+      changed_when: " 'Rust is installed now. Great!' in rustup_output.stdout "
+      when: install.rustlang
+      tags: [ 'tasks::rustlang' ]
+
+    - name: Install Rust toolchains
+      become: yes
+      become_user: "{{ username }}"
+      shell: ~/.cargo/bin/rustup toolchain install {{ item }}
+      with_items: "{{ rustlang.toolchains | default([]) }}"
+      when: install.rustlang and rustlang.toolchains is defined
+      tags: [ 'tasks::rustlang' ]
+
+    - name: Install Rust targets
+      become: yes
+      become_user: "{{ username }}"
+      shell: ~/.cargo/bin/rustup target add {{ item }}
+      with_items: "{{ rustlang.targets | default([]) }}"
+      when: install.rustlang and rustlang.targets is defined
+      tags: [ 'tasks::rustlang' ]
+
+    - name: Install Rust components
+      become: yes
+      become_user: "{{ username }}"
+      shell: ~/.cargo/bin/rustup component add {{ item }}
+      with_items: "{{ rustlang.components | default([]) }}"
+      when: install.rustlang and rustlang.components is defined
+      tags: [ 'tasks::rustlang' ]
+
+    - name: Install Rust binaries
+      become: yes
+      become_user: "{{ username }}"
+      shell: ~/.cargo/bin/cargo install {{ item }}
+      with_items: "{{ rustlang.binaries | default([]) }}"
+      when: install.rustlang and rustlang.binaries is defined
+      tags: [ 'tasks::rustlang' ]
+
+    ###################### additionnal packages ######################
+    - name: Install useful tools
+      apt:
+        name: "{{ additionnal_packages_list }}"
+        state: present
+        update_cache: yes
+
+    ###################### Spyder package ######################
+    - name: Install Spyder
+      apt:
+        name: "spyder"
+        state: present
+        update_cache: yes
+      when: install.spyder
+
+    ###################### Copy useful files ######################
+    - name: copy bookmarks file to be imported manually in Firefox
+      copy:
+        src: "{{ playbook_dir }}/files/{{ item }}"
+        dest: "/home/{{ username }}/{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+      with_items:
+        - bookmarks.html
+        - MEMO_sign_your_git_commits.txt
+
+    ###################### Disable proxies ######################
+    - name: Stop and disable proxy services
+      systemd:
+        enabled: no
+        state: stopped
+        name: "{{ item }}"
+      with_items:
+        - redsocks
+        - cntlm
+      when: install.proxy
+
+    ###################### Remove vagrant user from Ubuntu login screen ######################
+    - name: Hide vagrant user from the login screen
+      copy:
+        dest: "/var/lib/AccountsService/users/vagrant"
+        content: |
+          [User]
+          SystemAccount=true
+    
+    ###################### A few desktop customizations ######################
+    - name: find pycharm repo
+      find:
+        paths: /opt/
+        patterns: 'pycharm-*'
+        file_type: directory
+      register: pycharm_path
+      when: install.pycharm
+
+    - name: create pycharm launcher
+      copy:
+        dest: "/usr/share/applications/jetbrains-pycharm-ce.desktop"
+        content: |
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=PyCharm Community Edition
+          Icon={{ pycharm_path.files[0].path }}/bin/pycharm.svg
+          Exec="{{ pycharm_path.files[0].path }}/bin/pycharm.sh" %f
+          Comment=Python IDE for Professional Developers
+          Categories=Development;IDE;
+          Terminal=false
+          StartupWMClass=jetbrains-pycharm-ce
+      when: install.pycharm
+
+    - name: Default favorite apps list
+      set_fact:
+        favorites_apps_list: ['ubiquity.desktop','org.gnome.Nautilus.desktop','org.gnome.Terminal.desktop','org.gnome.gedit.desktop','firefox.desktop']
+        
+    - name: Additionnal favorites app file correspondance
+      set_fact: 
+        fav_ref:
+          - name: "chrome"
+            appFile: 'google-chrome.desktop'
+          - name: "slack"
+            appFile: 'slack.desktop'
+          - name: "vscode"
+            appFile: 'code.desktop'
+          - name: "terminator"
+            appFile: 'terminator.desktop'
+          - name: "pycharm"
+            appFile: 'jetbrains-pycharm-ce.desktop'
+          - name: "intellij"
+            appFile: 'jetbrains-idea-ce.desktop'
+          - name: "postman"
+            appFile: 'Postman.desktop'
+
+    - name: Add installed apps to default favorites list
+      set_fact:
+        favorites_apps_list: "{{ favorites_apps_list }} + [ '{{ item.appFile }}' ]"
+      with_items: "{{ fav_ref }}"
+      when: install[item.name]
+
+    - name: Configure favorites apps
+      become: true
+      become_user: "{{ username }}"
+      dconf:
+        key: "/org/gnome/shell/favorite-apps"
+        value: >-
+          {{ favorites_apps_list | string | regex_replace("u'", "'") }}
+        state: present
+
+    - name: Copy wallpaper
+      copy:
+          src: "{{ playbook_dir }}/files/wallpaper.jpg"
+          dest: "/home/{{ username }}/wallpaper.jpg"
+          owner: "{{ username }}"
+          group: "{{ username }}"
+          mode: 0755
+
+    - name: Configure wallpaper
+      become: true
+      become_user: "{{ username }}"
+      dconf:
+        key: "/org/gnome/desktop/background/picture-uri"
+        value: "'file:///home/{{ username }}/wallpaper.jpg'"
+        state: present
+
+    - name: Convert bash files with dos2unix to avoid CRLF error
+      shell: dos2unix "/home/{{ username }}/.{{ item | basename }}"
+      with_fileglob: 
+        - "./files/*sh*"

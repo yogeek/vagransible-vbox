@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+
+Username        {{ cntlm.username }}
+PassNTLMv2      {{ cntlm.passntlmv2 }}
+Domain          cw01
+Workstation     vm.dev
+Proxy           {{ cntlm.proxy }}
+NoProxy         localhost, 127.0.0.*, 192.168.*
+Listen          3128
+SOCKS5Proxy     8010
+Auth            NTLMv2

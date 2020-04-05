@@ -1,0 +1,36 @@
+---
+
+- name: Create Terraform directory
+  file:
+    path: "{{terraform_dir}}"
+    state: directory
+  register: terraform_directory
+
+- name: Check terraform version
+  shell: "terraform --version 2>&1 | grep {{terraform_version}}"
+  failed_when: false
+  changed_when: false
+  register: terraform_versions_match
+
+- include: download.yml
+  when: terraform_versions_match.rc != 0
+
+- name: Install unzip to unarchive terraform
+  apt:
+    name: unzip
+    state: present
+
+- name: Unarchive Terraform archive
+  unarchive:
+    src: "{{ binary_tmp_directory }}/terraform-{{terraform_version}}.zip"
+    dest: "{{terraform_dir}}"
+    copy: no
+  when: terraform_versions_match.rc != 0 or terraform_directory is changed
+
+- name: Adding terraform command to user path
+  file: 
+    src: "{{terraform_dir}}/terraform"
+    dest: /usr/bin/terraform
+    state: link
+
+- include: tfenv.yml

@@ -1,0 +1,6 @@
+---
+
+- name: restart cntlm
+  service:
+    name: cntlm
+    state: restarted

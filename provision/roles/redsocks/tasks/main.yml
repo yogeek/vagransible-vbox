@@ -1,0 +1,58 @@
+---
+- name: install Redsocks
+  become: yes
+  apt:
+    name:
+      - redsocks
+    state: present
+
+- name: copy Redsocks config
+  become: yes
+  copy: 
+    src: redsocks.conf 
+    dest: /etc/redsocks.conf
+  register: redsocks_conf
+
+- name: find docker0 interface ip
+  shell: ip -br address | grep docker0 | awk '{ print $3; }' | cut -d'.' -f -3
+  register: docker_ip
+  changed_when: false
+
+- set_fact:
+    docker_network_prefix: "{{ docker_ip.stdout }}"
+
+- name: print docker network
+  debug: 
+    var: docker_network_prefix
+
+- name: install Redsocks iptables script
+  become: yes
+  template:
+    src: redsocks-iptables.j2
+    dest: '/usr/local/sbin/redsocks-iptables'
+    owner: root
+    group: root
+    mode: 'u=rwx,go=rx'
+  register: redsocks_iptables
+
+- name: create Redsocks service directory
+  become: yes
+  file: 
+    path: /etc/systemd/system/redsocks.service.d
+    state: directory
+    mode: 0775
+
+- name: copy Redsocks service config
+  become: yes
+  copy: 
+    src: iptables.conf
+    dest: /etc/systemd/system/redsocks.service.d/iptables.conf
+  register: redsocks_service
+
+- name: daemon-reload to pick up config changes and restart service redsocks
+  systemd:
+    name: redsocks
+    state: restarted
+    enabled: no
+    daemon_reload: yes
+  when: redsocks_conf.changed or redsocks_iptables.changed  or redsocks_service.changed

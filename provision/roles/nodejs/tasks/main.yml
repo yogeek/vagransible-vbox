@@ -1,0 +1,48 @@
+---
+
+# adapted from : https://github.com/elnebuloso/ansible-role-nvm/blob/master/tasks/main.yml
+
+- name: "install dependencies"
+  apt: pkg={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - git
+    - curl
+    - sudo
+
+- name: "install nvm"
+  become: yes
+  become_user: "{{ nvm_user }}"
+  git: repo=https://github.com/creationix/nvm.git dest=~/.nvm version={{ nvm_version }} force={{nvm_git_force}}
+
+- name: source nvm in ~/.bashrc
+  become: yes
+  become_user: "{{ nvm_user }}"
+  lineinfile: >
+    dest=~/.bashrc
+    line={{ item }}
+    create=yes
+  with_items:
+    - 'export NVM_DIR="$HOME/.nvm"'
+    - '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"'
+
+- name: "nvm install node versions"
+  become: yes
+  become_user: "{{ nvm_user }}"
+  shell: "source ~/.nvm/nvm.sh && nvm install {{ item }}"
+  args:
+     executable: /bin/bash
+  register: nvm_node_version_install_result
+  changed_when: "'is already installed' not in nvm_node_version_install_result.stderr"
+  with_items: "{{ nvm_node_versions }}"
+
+- name: "nvm create executable"
+  template:
+    src: "nvm.sh"
+    dest: "/usr/local/bin/nvm"
+    owner: "root"
+    mode: 0755
+
+- name: install npm globally (nvm also install it locally)
+  apt: pkg={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - npm

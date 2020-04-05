@@ -1,0 +1,210 @@
+---
+
+####################
+# Choose your tools
+####################
+install:
+  # IDE
+  vscode: true
+  vscodeextensions: true
+  atom: false
+  sublimetext: true
+  spyder: false
+  intellij: false
+  pycharm: false
+  # Terminal
+  ohmyzsh: true
+  terminator: true
+  # Install and configure proxy ? (CNTLM+Redsocks for remote work, will be stopped by default on the VM)
+  proxy: true
+  # Browser
+  chrome: true
+  # DevOps
+  kubectl: true
+  minikube: true
+  helm: true
+  terraform: true
+  packer: true
+  istioctl: true
+  # Python
+  pipenv: true
+  pyenv: true
+  # Other
+  nodejs: true
+  java: true
+  scala: true
+  golang: true
+  rustlang: true
+  slack: true
+  postman: true
+  # Install protobuf tools ? (protoc,...)
+  protobuf: true
+  # Install corporate certificates ? (only available on corporate network)
+  certs: true
+
+# Tools versions (only previously enabled tools will be taken into account)
+version:
+  golang: "1.11.4"
+  protobuf: "3.6.1"
+  kubectl: "1.13.0"
+  minikube: "0.33.1"
+  istioctl: "1.0.5"
+  stern: "1.10.0"
+  docker_compose: "1.23.2"
+  intellij_version: "2018.3.1"
+  pycharm_version: "2018.3.2"
+  terraform: "0.11.11"
+  packer: "1.3.3"
+  nvm: "0.33.2"
+  nodejs: "8.4.0"
+  # For SDKs install, we use 'SDKMAN' tool (https://sdkman.io/)
+  # Leave the sdk versions below commented to get the latest version of each tool
+  # (if you want a specific version, check that it is avaiable in SDKMAN first)
+  # java: "8.0.212-zulu"
+  # scala: "2.12.8"
+  # sbt: "1.2.8"
+  # maven: "3.6.0"
+
+####################
+# Oh My Zsh config
+####################
+ohmyzsh:
+  theme: robbyrussell
+  plugins:
+    - git
+    - docker
+    - aws
+    - colored-man-pages
+    - zsh-autosuggestions
+    # - kubernetes
+    # - docker-compose
+    # - kubectl
+    # - terraform
+    # - python
+    # - kube-ps1
+    # - minikube
+    - rust
+    - cargo
+
+###################
+# Golang
+###################
+golang_gopath: '$HOME/workspace-go'
+golang_version: "{{ version.golang }}"
+golang_install_gvm: true
+golang_packages:
+  - bison
+
+###################
+# Rustlang
+###################
+rustlang:
+  toolchains: []
+    # stable toolchain is already installed
+    # - stable, beta or nightly. See https://github.com/rust-lang/rustup.rs for other toolchains
+  targets: []
+    # target of the OS already installed (usually x86_64-unknown-linux-gnu). see https://github.com/rust-lang/rustup.rs for other targets
+  components:
+    # required by Visual Studio Code Extension RLS
+    - rust-analysis
+    - rust-src
+    - rls
+    # Lints
+    - clippy
+    # Format Rust code
+    - rustfmt
+    # - rustfmt --toolchain nightly # more useful options on nightly channel
+  binaries: []
+    # - cross # cross compiler. See https://github.com/rust-embedded/cross
+
+###################
+# Protobuf
+###################
+protobuf_version: '3.6.1'
+
+####################
+# Python
+####################
+pip_package: python3-pip
+# Python packages to install
+pip_install_packages:
+  - name: psutil
+  - name: awscli
+  - name: aws-adfs
+  - name: kube-shell
+  - name: docker
+  - name: numpy 
+  - name: scipy 
+  - name: pandas
+  - name: matplotlib 
+  - name: ipython 
+  - name: jupyter 
+  - name: scrapy
+pyenv_plugins:
+  - name: "pyenv-virtualenv"
+    repo: "https://github.com/pyenv/pyenv-virtualenv.git"
+  - name: "pyenv-update"
+    repo: "https://github.com/pyenv/pyenv-update.git"
+
+# System dependencies to install (you can add some new items but please DO NOT REMOVE existing ones)
+prerequisites_apt_packages:
+  - gcc 
+  - python-dev 
+  - libkrb5-dev
+
+####################
+# Pycharm
+####################
+pycharm_edition: community
+
+####################
+# Intellij
+####################
+intellij_edition: community
+
+####################
+# VS Code config
+####################
+visual_studio_code_extensions:
+  # Use `code --list-extensions | xargs -L 1 echo code --install-extension` to export list from existing vscode instance 
+  - ms-python.python
+  - ms-vscode.Go
+  - ms-kubernetes-tools.vscode-kubernetes-tools
+  - technosophos.vscode-helm
+  - mauve.terraform
+  
+####################
+# Atom config
+####################
+# atom_packages:
+#   - minimap
+#   - linter
+#   - atom-beautify
+#   - file-icons
+
+#######################
+# Sublime Text config
+#######################
+# sublime_packages:
+#   - 'https://github.com/kemayo/sublime-text-git.git'
+#   - 'https://github.com/revolunet/sublimetext-markdown-preview'
+
+####################
+# Additionnal packages that can be useful
+####################
+additionnal_packages_list:
+  - firefox
+  - htop
+  - ncdu
+  - jq
+  - tmux
+  - socat
+  - fonts-powerline
+  - dos2unix
+
+####################
+# Docker
+####################
+# docker_edition: 'ce'
+# docker_version: '18.09.0'
+# docker_package: "docker-{{ docker_edition }}={{ docker_version }}"

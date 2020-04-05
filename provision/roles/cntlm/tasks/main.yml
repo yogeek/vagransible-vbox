@@ -1,0 +1,25 @@
+---
+
+# tasks file for cntlm
+- name: install cntlm
+  package:
+    name: "cntlm"
+    state: "present"
+    update_cache: yes
+  register: cntlm_install
+  until: cntlm_install is succeeded
+  retries: 3
+
+- name: configure cntlm
+  template:
+    src: cntlm.conf.j2
+    dest: /etc/cntlm.conf
+  register: config
+
+- name: restart cntlm if needed
+  service:
+    name: cntlm
+    state: restarted
+    enabled: no
+    daemon_reload: yes
+  when: config.changed

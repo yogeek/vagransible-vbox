@@ -1,0 +1,50 @@
+---
+
+###################### Install oh-my-zsh ######################
+- name: Include ohmyzsh role
+  include_role:
+    name: gantsign.oh-my-zsh
+    # public: yes
+  vars:
+    users:
+      - username: "{{ username }}"
+        oh_my_zsh:
+          theme: "{{ ohmyzsh.theme }}"
+          plugins: "{{ ohmyzsh.plugins }}"
+
+###################### Prerequisites ######################
+- name: Install prerequisites packages
+  apt:
+    name: "dos2unix"
+    state: present
+    update_cache: yes
+
+###################### Customize terminal ######################
+- name: Install bullet-train zsh theme
+  get_url:
+    url: 'https://raw.githubusercontent.com/caiogondim/bullet-train.zsh/master/bullet-train.zsh-theme'
+    dest: '/home/{{ username }}/.oh-my-zsh/themes'
+  ignore_errors: yes
+
+###################### Install plugins ####################
+- name: Install zsh_suggestions zsh plugin
+  git:
+    repo: 'https://github.com/zsh-users/zsh-autosuggestions.git'
+    dest: '/home/{{ username }}/.oh-my-zsh/plugins/zsh-autosuggestions'
+
+###################### Add ZSH config ######################
+- name: configure zsh aliases
+  copy:
+    src: "{{ item }}"
+    dest: "/home/{{ username }}/.zsh_aliases"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+  with_fileglob: "{{ playbook_dir }}/files/zsh_aliases"
+
+- name: deploy .zshrc file
+  copy:
+    src: "{{ item }}"
+    dest: "/home/{{ username }}/.zshrc"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+  with_fileglob: "{{ playbook_dir }}/files/zshrc"

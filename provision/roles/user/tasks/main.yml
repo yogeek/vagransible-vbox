@@ -1,0 +1,63 @@
+---
+
+# Environment should be ready, can create specific user
+- name: Add group for user {{ groupname }}
+  group:
+    name: "{{ groupname }}"
+    state: present
+
+# Generate ssh key => no idempotent...
+- name: Add a user
+  user:
+    name: "{{ username }}"
+    shell: /bin/bash
+    groups: "{{ groupname }},vboxsf"
+    append: yes
+    createhome: yes
+    home: /home/{{ username }}
+    comment: "{{ user_fullname }}"
+    generate_ssh_key: yes
+    state: present
+
+- name: Set password to "{{ username }}"
+  shell: echo "{{ username }}":"{{ user.password | default('password') }}" | sudo chpasswd
+  changed_when: false
+  no_log: True
+
+# Managing sudo access with a wheel group (not present in Ubuntu by default)
+- name: Make sure we have a 'wheel' group
+  group:
+    name: wheel
+    state: present
+
+- name: Allow 'wheel' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: Add sudoers users to wheel group
+  user: 
+    name: "{{ username }}" 
+    groups: wheel 
+    append: yes 
+    state: present
+
+###################### Add BASH config ######################
+- name: configure bash aliases
+  copy:
+    src: "{{ item }}"
+    dest: "/home/{{ username }}/.bash_aliases"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+  with_fileglob: "{{ playbook_dir }}/files/bash_aliases"
+
+- name: deploy .bashrc file
+  copy:
+    src: "{{ item }}"
+    dest: "/home/{{ username }}/.bashrc"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+  with_fileglob: "{{ playbook_dir }}/files/bashrc"

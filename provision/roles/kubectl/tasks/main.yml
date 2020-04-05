@@ -1,0 +1,82 @@
+---
+- name: Download kubernetes-client archive
+  get_url:
+    url: "https://dl.k8s.io/v{{kubectl_version}}/kubernetes-client-{{kubectl_os}}-{{kubectl_arch}}.tar.gz"
+    # checksum: "{{kubectl_checksum}}"
+    dest: "{{kubectl_tmp_directory}}"
+  tags:
+    - kubectl
+
+- name: Unarchive kubernetes-client
+  unarchive:
+    src: "{{kubectl_tmp_directory}}/kubernetes-client-{{kubectl_os}}-{{kubectl_arch}}.tar.gz"
+    dest: "{{kubectl_tmp_directory}}"
+  tags:
+    - kubectl
+
+- name: Copy kubectl binary to destination directory
+  copy:
+    src: "{{kubectl_tmp_directory}}/kubernetes/client/bin/{{item}}"
+    dest: "{{kubectl_bin_directory}}/{{item}}"
+    mode: 0755
+    owner: root
+    group: root
+    remote_src: yes
+  with_items:
+    - kubectl
+  tags:
+    - kubectl
+
+# kubectx and kubens
+
+- name: Download kubectx/kubens
+  git:
+    repo: 'https://github.com/ahmetb/kubectx'
+    dest: /opt/kubectx
+
+- name: Add kubectx/kubens to path binaries
+  file:
+    src: "/opt/kubectx/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+  with_items:
+    - kubectx
+    - kubens
+
+- name:  Ensure completion directory exists
+  file:
+    path: "/home/{{ username }}/.oh-my-zsh/completions"
+    mode: 0755
+    state: directory
+  when: install.ohmyzsh
+
+- name: Add completion scripts for kubectx/kubens
+  file:
+    src: "/opt/kubectx/completion/{{ item }}.zsh"
+    dest: "/home/{{ username }}/.oh-my-zsh/completions/_{{ item }}.zsh"
+    state: link
+  with_items:
+    - kubectx
+    - kubens
+  when: install.ohmyzsh
+
+# Stern
+- name: Download Stern
+  get_url:
+    url: "https://github.com/wercker/stern/releases/download/{{ version.stern }}/stern_linux_amd64"
+    dest: "{{ kubectl_tmp_directory }}/stern"
+  tags:
+    - stern
+
+- name: Copy stern binary to destination directory
+  copy:
+    src: "{{kubectl_tmp_directory}}/{{item}}"
+    dest: "{{kubectl_bin_directory}}/{{item}}"
+    mode: 0755
+    owner: root
+    group: root
+    remote_src: yes
+  with_items:
+    - stern
+  tags:
+    - stern

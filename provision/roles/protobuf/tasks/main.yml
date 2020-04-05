@@ -1,0 +1,47 @@
+---
+  
+- name: Download protoc archive
+  get_url:
+    url: https://github.com/google/protobuf/releases/download/v{{version.protobuf}}/protoc-{{version.protobuf}}-linux-x86_64.zip
+    dest: "{{ binary_tmp_directory }}"
+  tags:
+    - protoc
+
+- name:  Ensure target directory exists
+  file:
+    path: "{{ binary_tmp_directory }}/protoc3"
+    mode: 0755
+    state: directory
+
+- name: Unarchive protoc
+  unarchive:
+    src: "{{ binary_tmp_directory }}/protoc-{{version.protobuf}}-linux-x86_64.zip"
+    dest: "{{ binary_tmp_directory }}/protoc3"
+  tags:
+    - protoc
+
+- name: Copy protoc binary to destination directory
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/local/bin/{{ item | basename }}"
+    mode: 0755
+    owner: root
+    group: root
+    remote_src: yes
+  with_fileglob:
+    - "{{binary_tmp_directory}}/protoc3/bin/*"
+  tags:
+    - protoc
+
+- name: Copy protoc include to destination directory
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/local/include/{{ item }}"
+    mode: 0755
+    owner: root
+    group: root
+    remote_src: yes
+  with_fileglob:
+    - "{{binary_tmp_directory}}/protoc3/include/*"
+  tags:
+    - protoc
