@@ -97,6 +97,9 @@
 # https://galaxy.ansible.com/gantsign/sdkman_init
 - name: gantsign.sdkman_init
 
+# https://galaxy.ansible.com/cimon-io/asdf
+- name: cimon-io.asdf
+
 ######################################################
 # MEMO
 ######################################################

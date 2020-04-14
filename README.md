@@ -6,8 +6,8 @@ This repo is a way to ease the maintenance and evolution of common development t
 
 Tested with :
 
-- VirtualBox 6.1.2
-- Vagrant : 2.2.2, 2.2.3
+- VirtualBox 6.1.2, 6.1.4
+- Vagrant : 2.2.2, 2.2.3, 2.2.7
 - Windows 7, 10
 
 ## Prerequisites on your Windows host
@@ -17,8 +17,10 @@ Tested with :
 - Install VirtualBox : https://www.virtualbox.org/wiki/Downloads and set the default machine folder (`File > Preferences > General > Default Machine Folder`) to a disk where you have enough space (you can choose the size of your VM in the next part but consider 15Go as a minimum if you install all the proposed tools)
 - Have a direct connection to internet
 
-Troubleshooting : if you have a Windows 7 or 8, you may encounter an error launching vagrant concerning the PowerShell version.
+Troubleshooting : 
+- if you have a Windows 7 or 8, you may encounter an error launching vagrant concerning the PowerShell version.
 In this case, you can download a new PowerShell version here : https://social.technet.microsoft.com/wiki/contents/articles/21016.how-to-install-windows-powershell-4-0.aspx
+- check that the VirtualBox installation directory in in your PATH : https://www.roelpeters.be/vboxmanage-is-not-recognized-and-how-to-solve-it/
 
 ## TL;DR
 

@@ -125,6 +125,12 @@
       tags: [ 'role::git_user' ]
 
     ###########################################
+    # ASDF Version manager
+    ###########################################
+    - role: cimon-io.asdf
+      asdf_user: "{{ username }}"
+
+    ###########################################
     # VSCode
     ###########################################
     - role: brentwg.visual-studio-code

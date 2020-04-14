@@ -87,6 +87,22 @@ ohmyzsh:
     - cargo
 
 ###################
+# ASDF (https://asdf-vm.com)
+# https://asdf-vm.com/#/plugins-all
+###################
+
+asdf_plugins:
+  - name: "jsonnet"                   # a plugin name
+    repository: ""                    # a plugin repository, optional
+    versions:                         # a list of versions to install
+      - 0.15.0
+      - 0.14.0
+    global: 0.15.0                  # set as a global version, optional
+  - name: "bat"
+    versions: ["0.13.0"]
+    global: "0.13.0"      
+
+###################
 # Golang
 ###################
 golang_gopath: '$HOME/workspace-go'
